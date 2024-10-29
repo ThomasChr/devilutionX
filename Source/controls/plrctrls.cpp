@@ -1135,11 +1135,18 @@ void StashMove(AxisDirection dir)
 	}
 
 	if (dir.x == AxisDirectionX_LEFT) {
-		if (ActiveStashSlot.x > 0)
-			ActiveStashSlot.x--;
+		if (ActiveStashSlot.x > 0) {
+			const StashStruct::StashCell curStashItemIndex = Stash.GetItemIdAtPosition(ActiveStashSlot);
+			do {
+				ActiveStashSlot.x--;
+			} while (holdItem.isEmpty() && ActiveStashSlot.x > 0 && curStashItemIndex != StashStruct::EmptyCell && curStashItemIndex == Stash.GetItemIdAtPosition(ActiveStashSlot));
+		}
 	} else if (dir.x == AxisDirectionX_RIGHT) {
 		if (ActiveStashSlot.x < 10 - itemSize.width) {
-			ActiveStashSlot.x++;
+			const StashStruct::StashCell curStashItemIndex = Stash.GetItemIdAtPosition(ActiveStashSlot);
+			do {
+				ActiveStashSlot.x++;
+			} while ((ActiveStashSlot.x < 10 - itemSize.width) && holdItem.isEmpty() && curStashItemIndex != StashStruct::EmptyCell && curStashItemIndex == Stash.GetItemIdAtPosition(ActiveStashSlot));
 		} else {
 			Point stashSlotCoord = GetStashSlotCoord(ActiveStashSlot);
 			Point rightPanelCoord = { GetRightPanel().position.x, stashSlotCoord.y };
@@ -1149,11 +1156,18 @@ void StashMove(AxisDirection dir)
 		}
 	}
 	if (dir.y == AxisDirectionY_UP) {
-		if (ActiveStashSlot.y > 0)
-			ActiveStashSlot.y--;
+		if (ActiveStashSlot.y > 0) {
+			const StashStruct::StashCell curStashItemIndex = Stash.GetItemIdAtPosition(ActiveStashSlot);
+			do {
+				ActiveStashSlot.y--;
+			} while (holdItem.isEmpty() && ActiveStashSlot.y > 0 && curStashItemIndex != StashStruct::EmptyCell && curStashItemIndex == Stash.GetItemIdAtPosition(ActiveStashSlot));
+		}
 	} else if (dir.y == AxisDirectionY_DOWN) {
 		if (ActiveStashSlot.y < 10 - itemSize.height) {
-			ActiveStashSlot.y++;
+			const StashStruct::StashCell curStashItemIndex = Stash.GetItemIdAtPosition(ActiveStashSlot);
+			do {
+				ActiveStashSlot.y++;
+			} while ((ActiveStashSlot.y < 10 - itemSize.height) && holdItem.isEmpty() && curStashItemIndex != StashStruct::EmptyCell && curStashItemIndex == Stash.GetItemIdAtPosition(ActiveStashSlot));
 		} else if ((holdItem.isEmpty() || CanBePlacedOnBelt(*MyPlayer, holdItem)) && ActiveStashSlot.x > 1) {
 			int beltSlot = ActiveStashSlot.x - 2;
 			Slot = SLOTXY_BELT_FIRST + beltSlot;
@@ -1169,6 +1183,19 @@ void StashMove(AxisDirection dir)
 
 	if (ActiveStashSlot != InvalidStashPoint) {
 		Point mousePos = GetStashSlotCoord(ActiveStashSlot);
+		if (holdItem.isEmpty()) {
+			if (const StashStruct::StashCell curStashItemIndex = Stash.GetItemIdAtPosition(ActiveStashSlot); curStashItemIndex != StashStruct::EmptyCell) {
+				const Item curStashItem = Stash.stashList[curStashItemIndex];
+				const Point posOfFirstItemStashSlot = FindFirstStashSlotOnItem(curStashItemIndex);
+				if (posOfFirstItemStashSlot != InvalidStashPoint) {
+					mousePos = GetStashSlotCoord(posOfFirstItemStashSlot);
+					ActiveStashSlot = FindClosestStashSlot(mousePos);
+				}
+
+				itemSize = GetInventorySize(curStashItem);
+			}
+		}
+
 		// Stash coordinates are all the top left of the cell, so we need to shift the mouse to the center of the held item
 		// or the center of the cell if we have a hand cursor (itemSize will be 1x1 here so we can use the same calculation)
 		mousePos += Displacement { itemSize.width * INV_SLOT_HALF_SIZE_PX, itemSize.height * INV_SLOT_HALF_SIZE_PX };
